@@ -55,23 +55,26 @@ class QueryValidator:
         if not query or len(query.strip()) < 3:
             return False, "Query too short"
 
-        # Check for question words or search intent
-        search_indicators = ['what', 'where', 'when', 'how', 'why', 'best', 'top', 'find', 'search']
         query_lower = query.lower()
-
-        # Simple heuristic: if it contains search indicators or is longer than 10 chars, likely valid
-        has_search_intent = any(word in query_lower for word in search_indicators)
-        is_reasonable_length = len(query.strip()) > 10
-
-        # Check for obvious commands
-        command_words = ['walk', 'add to', 'delete', 'create', 'make me', 'do this']
-        has_command = any(cmd in query_lower for cmd in command_words)
-
-        if has_command and not has_search_intent:
+        
+        # --- FIX 1: Check for commands FIRST and more accurately ---
+        # Check if the query STARTS with a command word
+        command_words = ['walk', 'add', 'delete', 'remove', 'create', 'make', 'do', 'execute', 'remind', 'set', 'call', 'text', 'email','play','dance','bake','chop','cut','jog']
+        if query_lower.split()[0] in command_words:
             return False, "Appears to be a command, not a search query"
 
-        if has_search_intent or is_reasonable_length:
+        # --- FIX 2: Check for search intent AFTER commands are ruled out ---
+        search_indicators = ['what', 'where', 'when', 'how', 'why', 'best', 'top', 'find', 'search']
+        has_search_intent = any(word in query_lower for word in search_indicators)
+        
+        if has_search_intent:
             return True, "Valid search query"
+
+        # If it has no specific search intent, a reasonable length is a good fallback,
+        # but only after we've confirmed it's not a command.
+        is_reasonable_length = len(query.strip()) > 10
+        if is_reasonable_length:
+            return True, "Valid search query (based on length)"
 
         return False, "Does not appear to be a search query"
 
