@@ -1,161 +1,436 @@
-Web Browser Query Agent
-This project is an intelligent web search agent built to fulfill the Ripplica Interview Task. It features a full-stack application with a Next.js frontend and a FastAPI backend. The agent can validate user queries, check for semantically similar past searches in a cache, perform new searches using a robust API, and summarize the findings with a powerful AI model.
+# Web Browser Query Agent
 
-Video Demonstration: Link to Video
+An intelligent web search agent that validates queries, searches the web, and provides summarized results with smart caching and similarity matching.
 
-## ✨ Features
+## 🎥 Demo Video
+[Watch the full demonstration and architecture explanation](https://drive.google.com/file/d/1VOwim0PejfpHqcj9yoKSSpjgEpkvG8Hl/view?usp=sharing)
 
-Full-Stack Application: A sleek, responsive Next.js frontend communicates with a powerful Python FastAPI backend.
+## 🚀 Features
 
-Intelligent Query Validation: The agent first classifies queries to distinguish between valid search requests and invalid commands (e.g., "walk my dog").
+### Core Functionality
+- **Query Validation**: Intelligently distinguishes between valid search queries and commands
+- **Similarity Matching**: Detects similar queries to return cached results
+- **Web Scraping**: Uses Playwright with optimized Google selectors and Bing fallback
+- **AI Summarization**: Leverages Gemini API for intelligent content summarization
+- **Smart Caching**: SQLite-based storage with semantic similarity matching
+- **Performance Tracking**: Monitors selector performance and optimizes scraping strategy
 
-Semantic Caching: Utilizes sentence-transformers to generate vector embeddings for queries. This allows the agent to find and return cached results for semantically similar queries (e.g., "Best places in Delhi" ≈ "Top Delhi attractions").
+### User Interfaces
+- **CLI Mode**: Interactive command-line interface for terminal users
+- **Web Interface**: Modern React/Next.js frontend with real-time statistics
+- **REST API**: FastAPI backend with comprehensive endpoints
 
-Robust Web Search: Employs the Tavily Search API for reliable, fast, and structured search results, avoiding the fragility of direct web scraping.
+### Advanced Features
+- **Multi-Engine Search**: Google primary with Bing fallback
+- **Selector Optimization**: Dynamic selector performance tracking and optimization
+- **Response Time Tracking**: Detailed performance metrics
+- **Cache Hit Analytics**: Smart caching with access count tracking
+- **Error Handling**: Robust error handling with fallback mechanisms
 
-AI-Powered Summarization: Leverages Google's Gemini 1.5 Flash model to provide concise, comprehensive summaries from the search results.
+## 🏗️ Architecture
 
-Persistent Storage: Uses an SQLite database (query_agent.db) to store query embeddings, search results, and summaries for efficient caching.
+### System Flow Diagram
 
-Interactive CLI: A fully functional command-line interface (query_agent.py) for backend testing and direct interaction.
-
-Real-time Frontend: The Next.js UI provides a smooth user experience with loading states, error handling, and a display for cached vs. new results.
-
-Detailed Logging: The FastAPI backend includes comprehensive logging to monitor incoming requests, cache hits/misses, and potential errors.
-
-🏛️ Architecture & Data Flow
-The agent is designed with a clear separation between the user interface, the backend logic, and the data layer. The data flows through a series of validation, caching, and processing steps to deliver an accurate and fast response.
-
-Code snippet
-
+```mermaid
 graph TD
-    subgraph "User Interface (Next.js)"
-        A[User Enters Query] --> B[POST Request to /api/search]
-        Z[Display Result or Error]
+    subgraph "User Interface Layer"
+        A[User Input] --> B{Interface Type}
+        B --> C[CLI Interface]
+        B --> D[Web Frontend]
+        D --> E[Next.js + React]
+        E --> F[POST /api/search]
     end
 
-    subgraph "Backend API (FastAPI)"
-        B --> C[Receive Request]
-        C --> D{1. Is Query Valid?}
-        D -- No --> E[Return 400 Error]
-        D -- Yes --> F{2. Find Similar Query in DB?}
-
-        subgraph "Path A: Cache Hit"
-            F -- Yes --> G[Retrieve Cached Summary from SQLite]
-            G --> R([Return JSON Response])
-        end
-
-        subgraph "Path B: Cache Miss"
-            F -- No --> I[3. Search Web with Tavily API]
-            I -- Structured Content --> J[4. Summarize Content with Gemini AI]
-            J -- New Summary & Embedding --> K[5. Store Result in SQLite]
-            K --> R
-        end
+    subgraph "API Layer (FastAPI)"
+        F --> G[FastAPI Backend]
+        C --> G
+        G --> H{Query Validation}
+        H -->|Invalid| I[Return 400 Error]
+        H -->|Valid| J{Check Cache}
     end
 
-    R --> Z
-    E --> Z
-🛠️ Tech Stack
-Component	Technology
-Frontend	Next.js, React, Tailwind CSS, Shadcn/ui
-Backend	FastAPI, Python 3
-AI Summarization	Google Gemini API (gemini-1.5-flash)
-Web Search	Tavily Search API
-Embeddings	Sentence-Transformers (all-MiniLM-L6-v2)
-Database	SQLite
-CLI	Click
+    subgraph "Cache Layer"
+        J -->|Hit| K[SQLite Database]
+        K --> L[Retrieve Cached Summary]
+        L --> M[Update Access Count]
+        M --> N[Return Cached Result]
+    end
 
-Export to Sheets
-🧠 Engineering Decisions
-Web Scraping vs. Search API (Tavily): Initial attempts with direct web scraping (using Playwright on DuckDuckGo/Google) proved to be extremely unreliable due to anti-bot measures, captchas, and frequent HTML structure changes. The decision was made to switch to the Tavily Search API. This provides a more robust, stable, and professional solution by delivering structured JSON data, eliminating the need for fragile CSS selectors and significantly improving the agent's reliability and speed.
+    subgraph "Web Scraping Layer"
+        J -->|Miss| O[Playwright Web Scraper]
+        O --> P{Selector Strategy}
+        P --> Q[Optimized Google Selectors]
+        P --> R[Bing Fallback]
+        Q --> S[Extract Search Results]
+        R --> S
+        S --> T[Scrape Top 5 Pages]
+    end
 
-Semantic Similarity Threshold: The similarity threshold in query_agent.py was set to 0.85. This value was chosen after testing to strike a balance between correctly identifying similar queries (like "places in Delhi" vs. "Delhi attractions") and preventing false positives (like "places in Delhi" vs. "places in Darjeeling").
+    subgraph "AI Processing Layer"
+        T --> U[Content Processing]
+        U --> V{API Available?}
+        V -->|Yes| W[Gemini AI Summarization]
+        V -->|No| X[Rule-based Summarization]
+        W --> Y[Generate Summary]
+        X --> Y
+    end
 
-Frontend-Backend Separation: The frontend is a standalone Next.js application that communicates with the backend via a well-defined REST API. This separation of concerns allows for independent development, scaling, and maintenance. The frontend's simulateAPICall was replaced with actual fetch requests to ensure it is a true client of the backend service.
+    subgraph "Storage Layer"
+        Y --> Z[Store Results]
+        Z --> AA[Generate Embeddings]
+        AA --> BB[Save to SQLite]
+        BB --> CC[Return Final Response]
+    end
 
-AI Model Choice (Gemini 1.5 Flash): Gemini 1.5 Flash was selected for its large context window, fast response times, and excellent summarization capabilities, all available through a generous free tier.
+    N --> DD[Display Results]
+    CC --> DD
+    I --> DD
+```
 
-State Management (Frontend): Simple React state management (useState, useEffect) was used, which is sufficient for this application's scope. For larger applications, a more robust solution like Redux or Zustand could be integrated.
+### Component Architecture
 
-🚀 Getting Started
-Follow these instructions to set up and run the project locally.
+```mermaid
+graph LR
+    subgraph "Frontend (Next.js)"
+        A[React Components]
+        B[UI Components]
+        C[State Management]
+        D[API Client]
+    end
 
-Prerequisites
-Python 3.8+
+    subgraph "Backend (FastAPI)"
+        E[Query Agent]
+        F[Web Scraper]
+        G[Content Processor]
+        H[Storage Manager]
+    end
 
-Node.js and npm (or yarn/pnpm)
+    subgraph "Core Components"
+        I[Query Validator]
+        J[Similarity Engine]
+        K[Performance Tracker]
+    end
 
-A virtual environment tool for Python (like venv)
+    subgraph "External Services"
+        L[Google Search]
+        M[Bing Search]
+        N[Gemini API]
+        O[SQLite DB]
+    end
 
-1. API Keys
-You will need API keys from two services:
+    A --> D
+    D --> E
+    E --> I
+    E --> J
+    E --> F
+    E --> G
+    E --> H
+    F --> L
+    F --> M
+    G --> N
+    H --> O
+    J --> K
+```
 
-Google Gemini: Get your key from Google AI Studio.
+## 🛠️ Tech Stack
 
-Tavily AI: Get your free key from the Tavily Dashboard.
+### Backend
+- **FastAPI**: High-performance Python web framework
+- **Playwright**: Web scraping and browser automation
+- **SQLite**: Local database for caching
+- **Google Gemini**: AI-powered summarization
+- **Sentence Transformers**: Semantic similarity matching
+- **BeautifulSoup**: HTML parsing and content extraction
+- **NumPy & Scikit-learn**: Numerical computations and similarity metrics
 
-2. Backend Setup
-The backend is located in the backend/ directory.
+### Frontend
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe JavaScript
+- **Tailwind CSS**: Utility-first CSS framework
+- **Shadcn/UI**: Modern UI component library
+- **Lucide React**: Icon library
 
-Bash
+### CLI
+- **Click**: Python CLI framework
+- **Rich formatting**: Enhanced terminal output
 
-# 1. Navigate to the backend directory
+## 📁 Project Structure
+
+```
+web-browser-agent/
+├── backend/
+│   ├── fastapi_backend.py      # FastAPI server with REST endpoints
+│   ├── query_agent.py          # Core agent logic + CLI interface
+│   ├── query_agent.db          # SQLite database (auto-generated)
+│   ├── requirements.txt        # Python dependencies
+│   ├── .env                    # Environment variables
+│   └── debug_page.html         # Debug utilities
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx            # Main application page
+│   │   ├── layout.tsx          # App layout
+│   │   └── globals.css         # Global styles
+│   ├── components/
+│   │   └── ui/                 # Shadcn UI components
+│   ├── lib/
+│   │   └── utils.ts            # Utility functions
+│   ├── package.json            # Node.js dependencies
+│   └── next.config.ts          # Next.js configuration
+└── README.md                   # This file
+```
+
+## 🚦 Getting Started
+
+### Prerequisites
+- Python 3.8+
+- Node.js 18+
+- npm or yarn
+
+### Backend Setup
+
+1. **Clone and navigate to backend**:
+```bash
 cd backend
+```
 
-# 2. Create and activate a Python virtual environment
+2. **Create virtual environment**:
+```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-# 3. Install the required Python packages
+3. **Install dependencies**:
+```bash
 pip install -r requirements.txt
+```
 
-# 4. Create a .env file in the 'backend' directory
-#    and add your API keys
-touch .env
-Your backend/.env file should look like this:
+4. **Set up environment variables** (create `.env` file):
+```env
+GOOGLE_API_KEY=your_gemini_api_key_here
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
+```
 
-GOOGLE_API_KEY="your-gemini-api-key-here"
-TAVILY_API_KEY="your-tavily-api-key-here"
-3. Frontend Setup
-The frontend is located in the frontend/ directory.
+5. **Install Playwright browsers**:
+```bash
+playwright install chromium
+```
 
-Bash
+### Frontend Setup
 
-# 1. Navigate to the frontend directory from the root
+1. **Navigate to frontend**:
+```bash
 cd frontend
+```
 
-# 2. Install the required Node.js packages
+2. **Install dependencies**:
+```bash
 npm install
+```
 
-# 3. The frontend is configured to talk to the backend on port 8000.
-#    No .env file is needed for the frontend.
-4. Running the Application
-You need to run the backend and frontend in two separate terminal windows.
+3. **Start development server**:
+```bash
+npm run dev
+```
 
-Terminal 1: Start the Backend
+## 🎯 Usage
 
-Bash
-
+### CLI Mode (Interactive)
+```bash
 cd backend
-source venv/bin/activate
+python query_agent.py interactive
+```
+
+Example session:
+```
+🔍 Web Browser Query Agent
+Enter your queries (type 'quit' to exit)
+--------------------------------------------------
+
+> Best restaurants in Mumbai
+Processing...
+==================================================
+Based on 5 sources, here's what I found about 'Best restaurants in Mumbai':
+
+**1. Top 10 Best Restaurants in Mumbai - 2024**
+Mumbai offers an incredible dining scene with options ranging from street food to fine dining...
+🔗 Source: https://example.com/mumbai-restaurants
+==================================================
+```
+
+### CLI Mode (Single Query)
+```bash
+python query_agent.py search "Latest AI technology trends 2024"
+```
+
+### CLI Statistics
+```bash
+python query_agent.py stats
+```
+
+### Web Interface
+1. Start the backend server:
+```bash
+cd backend
 python fastapi_backend.py
-The API server will start on http://localhost:8000. You will see logs for incoming requests here.
+```
 
-Terminal 2: Start the Frontend
-
-Bash
-
+2. Start the frontend:
+```bash
 cd frontend
 npm run dev
-The frontend application will be available at http://localhost:3000.
+```
 
-⚙️ Usage
-Web App: Open http://localhost:3000 in your browser. Enter a query in the search box and press "Search".
+3. Open http://localhost:3000 in your browser
 
-CLI (for testing): You can also run the core logic directly from the command line.
+### REST API
+Start the FastAPI server and visit http://localhost:8000/docs for interactive API documentation.
 
-Bash
+Key endpoints:
+- `POST /api/search` - Main search endpoint
+- `POST /api/validate` - Query validation
+- `GET /api/stats` - Query statistics
+- `GET /api/selectors/performance` - Selector performance metrics
 
-cd backend
-source venv/bin/activate
-python query_agent.py interactive
+## 🎛️ Configuration
+
+### Environment Variables
+- `GOOGLE_API_KEY`: Gemini API key for AI summarization
+- `HOST`: Server host (default: 0.0.0.0)
+- `PORT`: Server port (default: 8000)
+- `DEBUG`: Enable debug mode (default: false)
+
+### Query Validation
+The system validates queries using multiple criteria:
+- **Invalid patterns**: Commands like "walk my pet", "add apples"
+- **Search intent**: Looks for question words (what, how, best, etc.)
+- **Length validation**: Ensures reasonable query length
+
+### Similarity Matching
+- Uses sentence-transformers model: `all-MiniLM-L6-v2`
+- Similarity threshold: 0.75 (configurable)
+- Cosine similarity for matching queries
+
+## 🔧 API Endpoints
+
+### Core Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Health check and service info |
+| POST | `/api/search` | Main search functionality |
+| POST | `/api/validate` | Validate query |
+| GET | `/api/stats` | Get query statistics |
+| GET | `/api/health` | Detailed health check |
+
+### Advanced Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/selectors/performance` | Selector performance metrics |
+| POST | `/api/selectors/reset` | Reset performance tracking |
+| GET | `/api/similar/{query}` | Find similar queries |
+| DELETE | `/api/cache` | Clear query cache |
+| GET | `/api/debug/last-search` | Debug last search |
+
+## 🎨 Features Deep Dive
+
+### Smart Selector Optimization
+The system tracks performance of different CSS selectors for Google search results:
+- Success rate monitoring
+- Average results per selector
+- Dynamic selector ordering based on performance
+- Fallback chain for reliability
+
+### Intelligent Caching
+- **Semantic similarity**: Uses embeddings to find similar queries
+- **Access tracking**: Monitors cache hit patterns
+- **Storage efficiency**: Compressed embeddings in SQLite
+- **Cache invalidation**: Manual cache clearing available
+
+### Multi-Engine Strategy
+1. **Primary**: Google with optimized selectors
+2. **Fallback**: Bing search if Google fails
+3. **Requests fallback**: Simple HTTP requests if Playwright fails
+
+### AI-Powered Summarization
+- **Gemini Integration**: Uses Google's Gemini API when available
+- **Fallback Logic**: Rule-based summarization without API
+- **Content Processing**: Intelligent extraction of key information
+- **Source Attribution**: Maintains links to original sources
+
+## 📊 Performance Metrics
+
+### Response Time Tracking
+- Average response time calculation
+- Cache vs new search timing
+- Selector performance impact
+
+### Cache Efficiency
+- Hit rate monitoring
+- Query similarity scoring
+- Storage utilization
+
+### Scraping Success Rate
+- Selector success tracking
+- Engine fallback statistics
+- Content extraction quality
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Google Blocking**: 
+   - Uses rotating User-Agents
+   - Implements delays and stealth mode
+   - Falls back to Bing automatically
+
+2. **API Rate Limits**:
+   - Implements exponential backoff
+   - Falls back to rule-based summarization
+
+3. **Database Locks**:
+   - Proper connection handling
+   - Transaction management
+
+### Debug Mode
+Enable debug logging by setting `DEBUG=true` in environment variables.
+
+## 🔮 Future Enhancements
+
+### Planned Features
+- [ ] Multi-language support
+- [ ] Custom search engine configuration
+- [ ] Advanced filtering options
+- [ ] Export functionality
+- [ ] Real-time collaboration
+- [ ] Mobile app interface
+
+### Technical Improvements
+- [ ] Redis caching for better performance
+- [ ] Kubernetes deployment
+- [ ] Advanced NLP for query understanding
+- [ ] Machine learning for result ranking
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- **Google Gemini**: AI summarization capabilities
+- **Playwright Team**: Robust web scraping framework
+- **Sentence Transformers**: Semantic similarity matching
+- **FastAPI**: High-performance web framework
+- **Next.js Team**: Modern React framework
+
+---
+
+**Built with ❤️ for intelligent web search**
