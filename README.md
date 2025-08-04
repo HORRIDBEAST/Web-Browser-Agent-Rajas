@@ -243,21 +243,8 @@ python query_agent.py interactive
 ```
 
 Example session:
-```
-🔍 Web Browser Query Agent
-Enter your queries (type 'quit' to exit)
---------------------------------------------------
+<img width="1272" height="513" alt="image" src="https://github.com/user-attachments/assets/426fce8d-7738-44f4-a378-2adbc4024b01" />
 
-> Best restaurants in Mumbai
-Processing...
-==================================================
-Based on 5 sources, here's what I found about 'Best restaurants in Mumbai':
-
-**1. Top 10 Best Restaurants in Mumbai - 2024**
-Mumbai offers an incredible dining scene with options ranging from street food to fine dining...
-🔗 Source: https://example.com/mumbai-restaurants
-==================================================
-```
 
 ### CLI Mode (Single Query)
 ```bash
